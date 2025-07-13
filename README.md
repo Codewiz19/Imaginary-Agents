@@ -1,204 +1,132 @@
-# 🤖 AI Scheduling Assistant
+# 🧠 AI Meeting Scheduler Assistant
 
-A fully autonomous Agentic AI-based calendar scheduler built for the AMD Hackathon.  
-This agent eliminates the tedious back-and-forth of meeting planning by intelligently parsing email requests, identifying time constraints, coordinating with Google Calendar, and scheduling conflict-free meetings.
+This is a smart meeting assistant built with **Flask**, **OpenAI-compatible LLMs** (like LLaMA), and **Google Calendar API**. It automatically reads meeting emails, extracts key details, checks calendars, and finds a free slot to schedule the meeting.
 
 ---
 
 ## 🚀 Features
 
-- ✅ **Agentic AI Planning** – No manual micromanagement required  
-- ✅ **Google Calendar Integration** – Real-time calendar sync  
-- ✅ **Natural Language Understanding** – Extracts intent from email text  
-- ✅ **Conflict-Free Scheduling** – Evaluates availability across participants  
-- ✅ **Time-Zone Aware** – Defaults to IST (Asia/Kolkata)  
+- Extracts meeting **participants**, **duration**, **subject**, and **time constraints** from plain-text emails.
+- Uses a **LLM (like LLaMA 3.1)** via a local server (OpenAI-compatible).
+- Checks each participant’s **Google Calendar** for conflicts.
+- Finds the earliest **common free time slot** and returns a schedule.
+- Runs on a lightweight **Flask API** server.
 
 ---
 
-## 🛠 Tech Stack
+## 📁 Folder Structure
 
-| Component            | Stack/Tool                                    |
-|----------------------|-----------------------------------------------|
-| Backend Agent        | Python + vLLM + Google Calendar API           |
-| LLM Server           | vLLM (DeepSeek or LLaMA-3.1)                  |
-| Inference Model      | `deepseek-llm-7b-chat` / `Meta-Llama-3.1-8B`  |
-| Calendar API         | Google Calendar v3 API                        |
-| Timezone Management  | `dateutil`, `datetime`                        |
-
----
-
-## 🧠 Agent Flow
-
-The core scheduling flow is handled by the `MeetingSchedulerAgent`, which orchestrates the following steps:
-
----
-
-### 1. 📨 Email Parsing (`parse_email`)
-
-The agent uses an LLM to extract structured data from free-form email content. Extracted fields include:
-
-- **Participants**: List of email addresses (names converted to `@amd.com` if needed)
-- **Meeting Duration**: In minutes (inferred if not provided)
-- **Time Constraints**: Phrases like "next Thursday", "Monday at 10am"
-- **Subject**: Optional fallback from email body
-
-📤 **Example Output from LLM**:
-```json
-{
-  "participants": ["user1@amd.com", "user2@amd.com"],
-  "meeting_duration": 30,
-  "time_constraints": "next Thursday",
-  "subject": "Project Sync"
-}
+```
+.
+├── app.py               # Main Flask API & assistant logic
+├── send_meeting_request.py  # Client example to test API
+├── Keys/
+│   └── user.token         # Google Calendar OAuth token files
 ```
 
 ---
 
-### 2. 📅 Constraint Resolution (`extract_meeting_details`)
+## ⚙️ Requirements
 
-This function processes the natural language constraints into exact calendar time windows:
+### 1. Python Libraries
 
-| Constraint Example        | Start Time           | End Time             |
-|---------------------------|----------------------|----------------------|
-| "next Monday at 10:00"    | `10:00`              | `23:59`              |
-| "Thursday"                | `00:00`              | `23:59`              |
-| "next week"               | Next Monday `00:00`  | That day's `23:59`   |
+Install required libraries:
 
-📌 **Time Defaults**:
-- No time → Use `00:00` to `23:59`
-- Time mentioned → Use as start, end of day as end
+```bash
+pip install flask requests google-api-python-client google-auth-oauthlib python-dateutil
+```
+
+### 2. OpenAI-Compatible Server (e.g., LLaMA via `text-generation-webui`)
+
+- Your LLM must support the OpenAI API format (`/v1/chat/completions`).
+- Update the URL and model path in `app.py`.
+
+### 3. Google Calendar Token
+
+Place Google OAuth token files (from each user) in a folder called `Keys/`  
+Filename format: `<username>.token`  
+E.g. for `userone.amd@gmail.com`, filename should be `userone.token`
 
 ---
 
-### 3. 📥 Fetch Events (`retrive_calendar_events`)
+## ▶️ How to Run
 
-Using the Google Calendar API, the agent pulls existing events for:
+### 1. Start Flask Server
 
-- The sender (`From`)
-- All attendees (`Attendees`)
+Run this script:
 
-📄 **Example Event Data**:
-```json
-[
-  {
-    "StartTime": "2025-07-17T10:00:00+05:30",
-    "EndTime": "2025-07-17T10:30:00+05:30",
-    "NumAttendees": 3,
-    "Attendees": [
-      "userone@amd.com",
-      "usertwo@amd.com",
-      "userthree@amd.com"
-    ],
-    "Summary": "Team Sync"
-  }
-]
+```bash
+python app.py
 ```
 
----
+Server starts at `http://localhost:5000`
 
-### 4. 🧠 Scheduling Logic (`_schedule_internal`)
+### 2. Send a Meeting Request
 
-The agent iterates through working hours (9 AM to 6 PM IST), looking for a common conflict-free time slot across all users.
+Use the sample `send_meeting_request.py`:
 
-✅ **Steps**:
-- For each hour block:
-  - Check for scheduling conflicts across all attendees
-  - If available, assign that slot and populate it into each user's calendar view
-
-📤 **Final Output Format**:
-```json
-{
-  "Request_id": "1234",
-  "Datetime": "09-07-2025T12:34:55",
-  "Location": "IIT Mumbai",
-  "From": "userone.amd@gmail.com",
-  "Attendees": [
-    {
-      "email": "userone.amd@gmail.com",
-      "events": [ ... ]
-    },
-    {
-      "email": "usertwo.amd@gmail.com",
-      "events": [ ... ]
-    },
-    {
-      "email": "userthree.amd@gmail.com",
-      "events": [ ... ]
-    }
-  ],
-  "Subject": "Project Status",
-  "EmailContent": "Hi team, let's meet next Thursday at 10:00 AM for 30 minutes.",
-  "EventStart": "2025-07-17T10:30:00+05:30",
-  "EventEnd": "2025-07-17T11:00:00+05:30",
-  "Duration_mins": "30"
-}
-```
-
----
-
-## 📦 Example Input/Output
-
-### Input JSON
-```json
-{
-  "Request_id": "1234",
-  "Datetime": "09-07-2025T12:34:55",
-  "Location": "IIT Mumbai",
-  "From": "userone.amd@gmail.com",
-  "Attendees": [
-    { "email": "usertwo.amd@gmail.com" },
-    { "email": "userthree.amd@gmail.com" }
-  ],
-  "Subject": "Project Status",
-  "EmailContent": "Hi team, let's meet next Thursday at 10:00 AM for 30 minutes."
-}
-```
-
-### Output JSON
-```json
-{
-  "Request_id": "1234",
-  "Datetime": "09-07-2025T12:34:55",
-  "Location": "IIT Mumbai",
-  "From": "userone.amd@gmail.com",
-  "Attendees": [
-    {
-      "email": "userone.amd@gmail.com",
-      "events": [ ... ]
-    },
-    {
-      "email": "usertwo.amd@gmail.com",
-      "events": [ ... ]
-    },
-    {
-      "email": "userthree.amd@gmail.com",
-      "events": [ ... ]
-    }
-  ],
-  "Subject": "Project Status",
-  "EmailContent": "Hi team, let's meet next Thursday at 10:00 AM for 30 minutes.",
-  "EventStart": "2025-07-17T10:30:00+05:30",
-  "EventEnd": "2025-07-17T11:00:00+05:30",
-  "Duration_mins": "30"
-}
-```
-
----
-
-## 🧪 Testing the Agent
-
-To run the scheduler agent:
 ```python
-agent = MeetingSchedulerAgent(model_client=client, model_path="deepseek-llm-7b-chat")
-result = agent.schedule(meeting_input)
+from send_meeting_request import send_meeting_request
+# prepare payload...
+result = send_meeting_request(payload)
 print(result)
 ```
 
 ---
 
-## 🏁 Final Notes
+## 📤 API Endpoint
 
-- Ensure Google Calendar tokens are stored as `Keys/<username>.token`
-- Timezone default: `Asia/Kolkata` (IST)
-- vLLM server should be running on MI300 with selected model loaded
-- All output formats are automatically validated for hackathon evaluation
+### `POST /receive`
+
+- **Input**: JSON with meeting email, participants, time  
+- **Output**: Suggested schedule with available time slot
+
+---
+
+## ✅ Output Example
+
+```json
+{
+  "EventStart": "2025-07-17T09:00:00+05:30",
+  "EventEnd": "2025-07-17T09:30:00+05:30",
+  "Subject": "Agentic AI Project Status Update",
+  "Attendees": [
+    {"email": "userone.amd@gmail.com"},
+    {"email": "usertwo.amd@gmail.com"},
+    {"email": "userthree.amd@gmail.com"}
+  ],
+  "Location": "IIT Mumbai"
+}
+```
+
+---
+
+## 🧠 How It Works
+
+1. **Input**: User sends an email text and attendees list.  
+2. **LLM**: Extracts subject, duration, participants, and constraints.  
+3. **Date Parsing**: Converts “Thursday” or “next week” to exact dates.  
+4. **Calendar Check**: Fetches events from Google Calendar.  
+5. **Scheduling**: Picks the first free slot between 9 AM–6 PM.  
+6. **Returns**: A suggested schedule JSON.
+
+---
+
+## 📌 Notes
+
+- Pre-authorize Google Calendar and save tokens in `Keys/`.  
+- Use an OpenAI API-compatible LLM.  
+- For production, deploy with **Gunicorn** or **Docker**.
+
+---
+
+## 🔐 Security
+
+- Add authentication and rate limits before public exposure.  
+- Store `.token` files securely.
+
+---
+
+## 👨‍💻 Author
+
+**Abhishek Patil** — AI Meeting Scheduler using LLMs, Flask & Calendar APIs.
