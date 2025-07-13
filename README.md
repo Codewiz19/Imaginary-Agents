@@ -18,8 +18,8 @@ This is a smart meeting assistant built with **Flask**, **OpenAI-compatible LLMs
 
 ```
 .
-├── app.py               # Main Flask API & assistant logic
-├── send_meeting_request.py  # Client example to test API
+
+├── submission.ipynb
 ├── Keys/
 │   └── user.token         # Google Calendar OAuth token files
 ```
@@ -49,39 +49,7 @@ E.g. for `userone.amd@gmail.com`, filename should be `userone.token`
 
 ---
 
-## ▶️ How to Run
-
-### 1. Start Flask Server
-
-Run this script:
-
-```bash
-python app.py
-```
-
-Server starts at `http://localhost:5000`
-
-### 2. Send a Meeting Request
-
-Use the sample `send_meeting_request.py`:
-
-```python
-from send_meeting_request import send_meeting_request
-# prepare payload...
-result = send_meeting_request(payload)
-print(result)
-```
-
----
-
-## 📤 API Endpoint
-
-### `POST /receive`
-
-- **Input**: JSON with meeting email, participants, time  
-- **Output**: Suggested schedule with available time slot
-
----
+ 
 
 ## ✅ Output Example
 
@@ -129,4 +97,4 @@ print(result)
 
 ## 👨‍💻 Author
 
-**Abhishek Patil** — AI Meeting Scheduler using LLMs, Flask & Calendar APIs.
+**Imaginary Agents** — AI Meeting Scheduler using LLMs, Flask & Calendar APIs.
