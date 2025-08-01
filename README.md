@@ -1,13 +1,13 @@
 # 🧠 AI Meeting Scheduler Assistant
 
-This is a smart meeting assistant built with **Flask**, **OpenAI-compatible LLMs** (like LLaMA), and **Google Calendar API**. It automatically reads meeting emails, extracts key details, checks calendars, and finds a free slot to schedule the meeting.
+This is a smart meeting assistant built with **Flask**, **OpenAI-compatible LLMs** ( DeepSeek R1), and **Google Calendar API**. It automatically reads meeting emails, extracts key details, checks calendars, and finds a free slot to schedule the meeting.
 
 ---
 
 ## 🚀 Features
 
 - Extracts meeting **participants**, **duration**, **subject**, and **time constraints** from plain-text emails.
-- Uses a **LLM (like LLaMA 3.1)** via a local server (OpenAI-compatible).
+- Uses a **LLM (like DeepSeek R1)** via a local server (OpenAI-compatible).
 - Checks each participant’s **Google Calendar** for conflicts.
 - Finds the earliest **common free time slot** and returns a schedule.
 - Runs on a lightweight **Flask API** server.
@@ -36,7 +36,7 @@ Install required libraries:
 pip install flask requests google-api-python-client google-auth-oauthlib python-dateutil
 ```
 
-### 2. OpenAI-Compatible Server (e.g., LLaMA via `text-generation-webui`)
+### 2. OpenAI-Compatible Server  
 
 - Your LLM must support the OpenAI API format (`/v1/chat/completions`).
 - Update the URL and model path in `app.py`.
